@@ -152,6 +152,7 @@ jsk_pcl_nodelet(src/hinted_plane_detector_nodelet.cpp "jsk_pcl/HintedPlaneDetect
 # jsk_pcl_nodelet(src/pointcloud_throttle_nodelet.cpp "jsk_pcl/NodeletPointCloudThrottle" "point_cloud_throttle")
 jsk_pcl_nodelet(src/centroid_publisher_nodelet.cpp "jsk_pcl/CentroidPublisher" "centroid_publisher")
 jsk_pcl_nodelet(src/fisheye_sphere_publisher_nodelet.cpp "jsk_pcl/FisheyeSpherePublisher" "fisheye_sphere_publisher")
+jsk_pcl_nodelet(src/pointcloud_to_stl_nodelet.cpp "jsk_pcl/PointCloudToSTL" "pointcloud_to_stl")
 # jsk_pcl_nodelet(src/image_throttle_nodelet.cpp
 #   "jsk_pcl/NodeletImageThrottle" "image_throttle")
 # jsk_pcl_nodelet(src/image_mux_nodelet.cpp
