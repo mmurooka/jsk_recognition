@@ -173,16 +173,19 @@ namespace jsk_pcl_ros
     pcl::fromROSMsg(req.cloud, *cloud);
     exportSTL(cloud);
     res.output = latest_output_path_;
+    return true;
   }
 
   bool PointCloudToSTL::createURDF(jsk_pcl_ros::SetPointCloud2::Request &req,
                                    jsk_pcl_ros::SetPointCloud2::Response &res)
   {
+    return true;
   }
 
   bool PointCloudToSTL::spawnURDF(jsk_pcl_ros::SetPointCloud2::Request &req,
                                   jsk_pcl_ros::SetPointCloud2::Response &res)
   {
+    return true;
   }
 
 
