@@ -1,0 +1,8 @@
+<launch>
+  <include file="$(find octomap_server)/launch/hrp2_octomap_mapping_contact_sensor.launch" >
+    <arg name="ROBOT" value="HRP2JSKNT"/>
+    <arg name="input" value="/multisense/points"/>
+    <!-- <arg name="input" value="/multisense/resize_1_2/points"/> -->
+    <arg name="frame_id" value="odom"/>
+  </include>
+</launch>

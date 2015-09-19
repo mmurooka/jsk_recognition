@@ -1,0 +1,106 @@
+min_sensor_dist: .2
+# self_see_default_padding: 0.0
+self_see_default_padding: 0.2
+self_see_default_scale: 1.0
+self_see_links:
+ # - name: base_link
+ # - name: base_footprint
+ # - name: base_bellow_link
+ # - name: base_laser_link
+ # - name: fl_caster_rotation_link
+ # - name: fl_caster_l_wheel_link
+ # - name: fl_caster_r_wheel_link
+ # - name: fr_caster_rotation_link
+ # - name: fr_caster_l_wheel_link
+ # - name: fr_caster_r_wheel_link
+ # - name: bl_caster_rotation_link
+ # - name: bl_caster_l_wheel_link
+ # - name: bl_caster_r_wheel_link
+ # - name: br_caster_rotation_link
+ # - name: br_caster_l_wheel_link
+ # - name: br_caster_r_wheel_link
+ # - name: torso_lift_link
+ # - name: l_torso_lift_side_plate_link
+ # - name: r_torso_lift_side_plate_link
+ # - name: torso_lift_motor_screw_link
+ # - name: imu_link
+ # - name: head_pan_link
+ # - name: head_tilt_link
+ # - name: head_plate_frame
+ # - name: sensor_mount_link
+ # - name: high_def_frame
+ # - name: high_def_optical_frame
+ # - name: double_stereo_link
+ # - name: wide_stereo_link
+ # - name: wide_stereo_optical_frame
+ # - name: wide_stereo_l_stereo_camera_frame
+ # - name: wide_stereo_l_stereo_camera_optical_frame
+ # - name: wide_stereo_r_stereo_camera_frame
+ # - name: wide_stereo_r_stereo_camera_optical_frame
+ # - name: narrow_stereo_link
+ # - name: narrow_stereo_optical_frame
+ # - name: narrow_stereo_l_stereo_camera_frame
+ # - name: narrow_stereo_l_stereo_camera_optical_frame
+ # - name: narrow_stereo_r_stereo_camera_frame
+ # - name: narrow_stereo_r_stereo_camera_optical_frame
+ # - name: projector_wg6802418_frame
+ # - name: projector_wg6802418_child_frame
+ # - name: head_mount_link
+ # - name: head_mount_kinect_ir_link
+ # - name: head_mount_kinect_ir_optical_frame
+ # - name: head_mount_kinect_rgb_link
+ # - name: head_mount_kinect_rgb_optical_frame
+ # - name: head_mount_prosilica_link
+ # - name: head_mount_prosilica_optical_frame
+ # - name: laser_tilt_mount_link
+ # - name: laser_tilt_link
+ # - name: r_shoulder_pan_link
+ # - name: r_shoulder_lift_link
+ # - name: r_upper_arm_roll_link
+ # - name: r_upper_arm_link
+ # - name: r_forearm_roll_link
+ # - name: r_elbow_flex_link
+ # - name: r_forearm_link
+ # - name: r_wrist_flex_link
+ # - name: r_wrist_roll_link
+ # - name: r_gripper_palm_link
+ # - name: r_gripper_led_frame
+ # - name: r_gripper_motor_accelerometer_link
+ # - name: r_gripper_tool_frame
+ # - name: r_gripper_motor_slider_link
+ # - name: r_gripper_motor_screw_link
+ # - name: r_gripper_l_finger_link
+ # - name: r_gripper_r_finger_link
+ # - name: r_gripper_l_finger_tip_link
+ # - name: r_gripper_r_finger_tip_link
+ # - name: r_gripper_l_parallel_link
+ # - name: r_gripper_r_parallel_link
+ # - name: r_gripper_l_finger_tip_frame
+ # - name: r_forearm_cam_frame
+ # - name: r_forearm_cam_optical_frame
+ - name: l_shoulder_pan_link
+ - name: l_shoulder_lift_link
+ - name: l_upper_arm_roll_link
+ - name: l_upper_arm_link
+ - name: l_forearm_roll_link
+ - name: l_elbow_flex_link
+ - name: l_forearm_link
+ - name: l_wrist_flex_link
+ - name: l_wrist_roll_link
+ - name: l_gripper_palm_link
+ - name: l_gripper_led_frame
+ - name: l_gripper_motor_accelerometer_link
+ - name: l_gripper_tool_frame
+ - name: l_gripper_motor_slider_link
+ - name: l_gripper_motor_screw_link
+ - name: l_gripper_l_finger_link
+ - name: l_gripper_r_finger_link
+ - name: l_gripper_l_finger_tip_link
+ - name: l_gripper_r_finger_tip_link
+ - name: l_gripper_l_parallel_link
+ - name: l_gripper_r_parallel_link
+ - name: l_gripper_l_finger_tip_frame
+ - name: l_forearm_cam_frame
+ - name: l_forearm_cam_optical_frame
+
+

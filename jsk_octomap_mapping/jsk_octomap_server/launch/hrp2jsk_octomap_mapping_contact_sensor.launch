@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find octomap_server)/launch/hrp2_octomap_mapping_contact_sensor.launch" >
+    <arg name="ROBOT" default="HRP2JSK"/>
+  </include>
+</launch>

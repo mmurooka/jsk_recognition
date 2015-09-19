@@ -1,0 +1,96 @@
+<!--
+  Example launch file for octomap_server mapping:
+  Listens to incoming PointCloud2 data and incrementally builds an octomap.
+  The data is sent out in different representations.
+
+  Copy this file into your workspace and adjust as needed, see
+  www.ros.org/wiki/octomap_server for details
+-->
+<launch>
+  <arg name="ROBOT" default="HRP2JSKNT"/>
+  <arg name="input" default="/xtion/depth/points"/>
+  <arg name="frame_id" default="base_footprint"/>
+
+  <arg name="resolution" default="0.020" />
+  <arg name="occupancy_min_x" default="0.40" />
+  <arg name="occupancy_max_x" default="0.7" />
+  <arg name="occupancy_min_y" default="0.0" />
+  <arg name="occupancy_max_y" default="0.3" />
+  <arg name="occupancy_min_z" default="0.85" />
+  <arg name="occupancy_max_z" default="1.15" />
+  <arg name="pointcloud_min_x" default="-1.0" />
+  <arg name="pointcloud_max_x" default="3.0" />
+  <arg name="pointcloud_min_y" default="-1.5" />
+  <arg name="pointcloud_max_y" default="1.5" />
+  <arg name="pointcloud_min_z" default="-1.0" />
+  <arg name="pointcloud_max_z" default="2.0" />
+
+  <node  name="resize_points_publisher"
+         pkg="jsk_pcl_ros" type="resize_points_publisher">
+    <remap from="~input" to="$(arg input)" />
+    <remap from="~output" to="cloud_in" />
+    <param name="step_x" value="4" />
+    <param name="step_y" value="4" />
+  </node>
+
+  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server"
+        output="screen">
+
+    <!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
+    <param name="frame_id" type="string" value="$(arg frame_id)"/>
+
+    <!-- maximum range to integrate (speedup!) -->
+    <param name="sensor_model/max_range" value="5.0" />
+
+    <!-- data source to integrate -->
+    <remap from="cloud_in" to="cloud_in_relay" />
+    <remap from="contact_sensors_in" to="contact_sensors_in_relay" />
+
+    <rosparam command="load" file="$(find octomap_server)/config/hrp2_contact_sensor_config.yaml" />
+
+    <!-- <param name="robot_description"  command="$(find xacro)/xacro.py '$(find hrpsys_gazebo_tutorials)/robot_models/$(arg ROBOT)/$(arg ROBOT).urdf.xacro'" /> -->
+    <param name="robot_description" textfile="$(find hrpsys_ros_bridge_tutorials)/models/HRP2JSKNT_WH_SENSORS.urdf" />
+
+    <param name="resolution" value="$(arg resolution)" />
+    <!-- <param name="resolution" value="0.015" /> -->
+
+    <!-- Sensor Input PassThrough Filter Params -->
+
+    <!-- for display -->
+    <param name="occupancy_min_x" value="$(arg occupancy_min_x)" />
+    <param name="occupancy_max_x" value="$(arg occupancy_max_x)" />
+    <param name="occupancy_min_y" value="$(arg occupancy_min_y)" />
+    <param name="occupancy_max_y" value="$(arg occupancy_max_y)" />
+    <param name="occupancy_min_z" value="$(arg occupancy_min_z)" />
+    <param name="occupancy_max_z" value="$(arg occupancy_max_z)" />
+    <param name="pointcloud_min_x" value="$(arg pointcloud_min_x)" />
+    <param name="pointcloud_max_x" value="$(arg pointcloud_max_x)" />
+    <param name="pointcloud_min_y" value="$(arg pointcloud_min_y)" />
+    <param name="pointcloud_max_y" value="$(arg pointcloud_max_y)" />
+    <param name="pointcloud_min_z" value="$(arg pointcloud_min_z)" />
+    <param name="pointcloud_max_z" value="$(arg pointcloud_max_z)" />
+    <param name="offset_vis_unknown" value="0" />
+  </node>
+
+  <node pkg="octomap_server" type="hrp2_contact_sensor.py" name="test_contact_sensor"
+        output="screen" >
+    <param name="frame_id" type="string" value="$(arg frame_id)"/>
+  </node>
+
+
+  <group ns="planner" if="false">
+    <!-- <param name="robot_description"  command="$(find xacro)/xacro.py '$(find hrpsys_gazebo_tutorials)/robot_models/$(arg ROBOT)/$(arg ROBOT).urdf.xacro'" /> -->
+    <param name="robot_description" textfile="$(find hrpsys_ros_bridge_tutorials)/models/HRP2JSKNT_WH_SENSORS.urdf" />
+
+    <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher" >
+      <param name="tf_prefix" type="string" value="planner" />
+    </node>
+
+    <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" >
+      <param name="use_gui" type="bool" value="true" />
+    </node>
+
+    <node name="tf_planner_body" pkg="tf" type="static_transform_publisher"
+          args="0.0 0.0 0.0 0.0 0.0 0.0 1.0 BODY planner/BODY 50"/>
+  </group>
+</launch>

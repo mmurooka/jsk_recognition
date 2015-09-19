@@ -1,0 +1,26 @@
+<launch>
+  <include file="$(find octomap_server)/launch/hrp2_octomap_mapping_contact_sensor.launch" >
+    <arg name="ROBOT" value="HRP2JSKNT"/>
+    <arg name="input" value="/multisense/points"/>
+    <!-- <arg name="input" value="/multisense/resize_1_2/points"/> -->
+    <arg name="frame_id" value="odom"/>
+
+    <!-- use 0.15 for updating map experiment -->
+    <!-- <arg name="resolution" default="0.015" /> -->
+    <!-- use 0.2 for pushing button experiment -->
+    <arg name="resolution" default="0.020" />
+
+    <arg name="occupancy_min_x" default="0.40" />
+    <arg name="occupancy_max_x" default="0.7" />
+    <arg name="occupancy_min_y" default="0.0" />
+    <arg name="occupancy_max_y" default="0.3" />
+    <arg name="occupancy_min_z" default="0.85" />
+    <arg name="occupancy_max_z" default="1.15" />
+    <arg name="pointcloud_min_x" default="-1.0" />
+    <arg name="pointcloud_max_x" default="3.0" />
+    <arg name="pointcloud_min_y" default="-1.5" />
+    <arg name="pointcloud_max_y" default="1.5" />
+    <arg name="pointcloud_min_z" default="-1.0" />
+    <arg name="pointcloud_max_z" default="2.0" />
+  </include>
+</launch>
