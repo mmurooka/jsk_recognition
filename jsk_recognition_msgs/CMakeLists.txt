@@ -46,6 +46,7 @@ add_message_files(
   Line.msg
   ICPResult.msg
   ImageDifferenceValue.msg
+  SimpleHandle.msg
   ContactSensor.msg
   ContactSensorArray.msg
   )

@@ -1,4 +1,4 @@
-// -*- mode: c++ -*-
+// -*- mode: C++ -*-
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -33,53 +33,51 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef JSK_RECOGNITION_UTILS_SPINDLE_LASER_SENSOR_H_
-#define JSK_RECOGNITION_UTILS_SPINDLE_LASER_SENSOR_H_
+#ifndef JSK_PCL_ROS_MOVING_LEAST_SQUARE_SMOOTHING_H_
+#define JSK_PCL_ROS_MOVING_LEAST_SQUARE_SMOOTHING_H_
 
-#include "jsk_recognition_utils/sensor_model/pointcloud_sensor_model.h"
+// ros
+#include <ros/ros.h>
+#include <ros/names.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <tf/transform_broadcaster.h>
+#include <jsk_pcl_ros/MovingLeastSquareSmoothingConfig.h>
 
-namespace jsk_recognition_utils
+// pcl
+#include <pcl_ros/pcl_nodelet.h>
+#include <pcl/point_types.h>
+#include <pcl/common/centroid.h>
+#include <pcl/surface/mls.h>
+#include <dynamic_reconfigure/server.h>
+#include <pcl/filters/filter.h>
+#include <jsk_topic_tools/diagnostic_nodelet.h>
+
+namespace jsk_pcl_ros
 {
-  class SpindleLaserSensor: public PointCloudSensorModel
+  class MovingLeastSquareSmoothing: public jsk_topic_tools::DiagnosticNodelet
   {
   public:
-    typedef boost::shared_ptr<SpindleLaserSensor> Ptr;
-    
-    SpindleLaserSensor(const double min_angle, const double max_angle,
-                       const double laser_freq,
-                       const size_t point_sample):
-      min_angle_(min_angle), max_angle_(max_angle),
-      laser_freq_(laser_freq),
-      point_sample_(point_sample) { }
-    
-    virtual void setSpindleVelocity(const double velocity)
-    {
-      spindle_velocity_ = spindle_velocity;
-    }
-
-    /**
-     * @brief
-     * Return the expected number of points according to distance and area.
-     * it is calculated according to:
-     * \frac{N}{2 \pi \Delta \phi}\frac{1}{r^2}s
-     * \Delta \phi = \frac{2 \pi}{\omega}
-     */
-    virtual double expectedPointCloudNum(double distance, double area) const
-    {
-      assert(spindle_velocity_ != 0.0);
-      double dphi = 2.0 * M_PI / spindle_velocity_;
-      return point_sample_ * laser_freq_ / (2.0 * dphi) / (distance * distance) * area;
-    }
-    
+    typedef MovingLeastSquareSmoothingConfig Config;
+    MovingLeastSquareSmoothing(): DiagnosticNodelet("MovingLesatSquareSmoothing"){};
   protected:
-    
-    double spindle_velocity_;
-    double min_angle_;
-    double max_angle_;
-    size_t point_sample_;
+    virtual void onInit();
+    virtual void subscribe();
+    virtual void unsubscribe();
+    virtual void smooth(const sensor_msgs::PointCloud2ConstPtr &input);
+    virtual void configCallback(Config &config, uint32_t level);
+
+    ros::Subscriber sub_input_;
+    ros::Publisher pub_;
+    bool gauss_param_set_;
+    bool calc_normal_;
+    double search_radius_;
+    bool use_polynomial_fit_;
+    int polynomial_order_;
+    boost::mutex mutex_;
+    boost::shared_ptr <dynamic_reconfigure::Server<Config> > srv_;
+
   private:
-    
   };
 }
 
-#endif 
+#endif

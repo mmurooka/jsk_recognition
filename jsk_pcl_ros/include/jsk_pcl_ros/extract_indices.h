@@ -33,53 +33,52 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef JSK_RECOGNITION_UTILS_SPINDLE_LASER_SENSOR_H_
-#define JSK_RECOGNITION_UTILS_SPINDLE_LASER_SENSOR_H_
+#ifndef JSK_PCL_ROS_EXTRACT_INDICES_H_
+#define JSK_PCL_ROS_EXTRACT_INDICES_H_
 
-#include "jsk_recognition_utils/sensor_model/pointcloud_sensor_model.h"
+#include "jsk_topic_tools/diagnostic_nodelet.h"
+#include "jsk_pcl_ros/pcl_conversion_util.h"
 
-namespace jsk_recognition_utils
+#include <sensor_msgs/PointCloud2.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/exact_time.h>
+#include <message_filters/sync_policies/approximate_time.h>
+
+
+namespace jsk_pcl_ros
 {
-  class SpindleLaserSensor: public PointCloudSensorModel
+  class ExtractIndices: public jsk_topic_tools::DiagnosticNodelet
   {
   public:
-    typedef boost::shared_ptr<SpindleLaserSensor> Ptr;
-    
-    SpindleLaserSensor(const double min_angle, const double max_angle,
-                       const double laser_freq,
-                       const size_t point_sample):
-      min_angle_(min_angle), max_angle_(max_angle),
-      laser_freq_(laser_freq),
-      point_sample_(point_sample) { }
-    
-    virtual void setSpindleVelocity(const double velocity)
-    {
-      spindle_velocity_ = spindle_velocity;
-    }
+    typedef pcl::PointXYZRGB PointT;
+    typedef message_filters::sync_policies::ExactTime<
+      PCLIndicesMsg,
+      sensor_msgs::PointCloud2 > SyncPolicy;
+    typedef message_filters::sync_policies::ApproximateTime<
+      PCLIndicesMsg,
+      sensor_msgs::PointCloud2 > ApproximateSyncPolicy;
 
-    /**
-     * @brief
-     * Return the expected number of points according to distance and area.
-     * it is calculated according to:
-     * \frac{N}{2 \pi \Delta \phi}\frac{1}{r^2}s
-     * \Delta \phi = \frac{2 \pi}{\omega}
-     */
-    virtual double expectedPointCloudNum(double distance, double area) const
-    {
-      assert(spindle_velocity_ != 0.0);
-      double dphi = 2.0 * M_PI / spindle_velocity_;
-      return point_sample_ * laser_freq_ / (2.0 * dphi) / (distance * distance) * area;
-    }
-    
+    ExtractIndices(): DiagnosticNodelet("ExtractIndices") {}
   protected:
-    
-    double spindle_velocity_;
-    double min_angle_;
-    double max_angle_;
-    size_t point_sample_;
+    virtual void onInit();
+    virtual void subscribe();
+    virtual void unsubscribe();
+    virtual void convert(
+      const PCLIndicesMsg::ConstPtr& indices_msg,
+      const sensor_msgs::PointCloud2::ConstPtr& msg);
+
+    bool keep_organized_;
+    bool negative_;
+    int max_queue_size_;
+    bool approximate_sync_;
+    boost::shared_ptr<message_filters::Synchronizer<SyncPolicy> >sync_;
+    boost::shared_ptr<message_filters::Synchronizer<ApproximateSyncPolicy> >async_;
+    ros::Publisher pub_;
+    message_filters::Subscriber<sensor_msgs::PointCloud2> sub_cloud_;
+    message_filters::Subscriber<PCLIndicesMsg> sub_indices_;
   private:
-    
   };
+
 }
 
-#endif 
+#endif
