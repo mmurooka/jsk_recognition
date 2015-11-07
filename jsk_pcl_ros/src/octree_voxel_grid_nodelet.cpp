@@ -43,23 +43,31 @@ namespace jsk_pcl_ros
   {
     boost::mutex::scoped_lock lock(mutex_);
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ> ());
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_voxeled (new pcl::PointCloud<pcl::PointXYZ> ());
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGBA> ());
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_voxeled (new pcl::PointCloud<pcl::PointXYZRGBA> ());
     pcl::fromROSMsg(*input_msg, *cloud);
 
     // generate octree
-    pcl::octree::OctreePointCloud<pcl::PointXYZ> octree(resolution_);
+    pcl::octree::OctreePointCloud<pcl::PointXYZRGBA> octree(resolution_);
     // add point cloud to octree
     octree.setInputCloud(cloud);
     octree.addPointsFromInputCloud();
     // get points where grid is occupied
-    pcl::octree::OctreePointCloud<pcl::PointXYZ>::AlignedPointTVector point_vec;
+    pcl::octree::OctreePointCloud<pcl::PointXYZRGBA>::AlignedPointTVector point_vec;
     octree.getOccupiedVoxelCenters(point_vec);
     // put points into point cloud
     cloud_voxeled->width = point_vec.size();
     cloud_voxeled->height = 1;
     for (int i = 0; i < point_vec.size(); i++) {
-      pcl::PointXYZ p(point_vec[i].x, point_vec[i].y, point_vec[i].z);
+      pcl::PointXYZRGBA p;
+      p.x = point_vec[i].x;
+      p.y = point_vec[i].y;
+      p.z = point_vec[i].z;
+      p.r = point_vec[i].r;
+      p.g = point_vec[i].g;
+      p.b = point_vec[i].b;
+      p.a = point_vec[i].a;
+      ROS_INFO_STREAM("hoge (" << point_vec[i].x << ", " << point_vec[i].y << ", " << point_vec[i].z << ", " << point_vec[i].r << ", " << point_vec[i].g << ", " << point_vec[i].b << " )");
       cloud_voxeled->push_back(p);
     }
 
@@ -80,7 +88,7 @@ namespace jsk_pcl_ros
       marker_msg.pose.orientation.w = 1.0;
       marker_msg.color = jsk_topic_tools::colorCategory20(0);
 
-      pcl::PointXYZ p;
+      pcl::PointXYZRGBA p;
       for (size_t i = 0; i < cloud_voxeled->size(); i++) {
         p = cloud_voxeled->at(i);
         geometry_msgs::Point point_ros;
