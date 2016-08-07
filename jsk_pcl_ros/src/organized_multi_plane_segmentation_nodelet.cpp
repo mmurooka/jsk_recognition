@@ -619,6 +619,15 @@ namespace jsk_pcl_ros
       std::vector<pcl::ModelCoefficients> fixed_refined_coefficients;
       forceToDirectOrigin(refined_coefficients, fixed_refined_coefficients);
       refined_coefficients = fixed_refined_coefficients;
+      // [ToDo] sort based on polygon area
+      /*
+        sort criteria (polygon area):
+          refined_convexes[i]->area()
+        sort target:
+          refined_inliers,
+          refined_boundary_clouds,
+          refined_coefficients,
+      */
       publishSegmentationInformation(
         header, input,
         refined_pub_, refined_polygon_pub_, refined_coefficients_pub_,
