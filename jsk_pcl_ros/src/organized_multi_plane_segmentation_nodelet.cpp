@@ -475,7 +475,6 @@ namespace jsk_pcl_ros
     extract.setInputCloud(input);
     for (size_t i = 0; i < boundary_indices.size(); i++) {
       pcl::PointCloud<PointT> boundary_cloud;
-      pcl::PointIndices boundary_one_indices = boundary_indices[i];
       pcl::PointIndices::Ptr indices_ptr = boost::make_shared<pcl::PointIndices>(boundary_indices[i]);
       extract.setIndices(indices_ptr);
       extract.filter(boundary_cloud);
