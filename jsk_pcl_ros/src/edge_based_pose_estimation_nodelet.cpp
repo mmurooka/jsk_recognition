@@ -34,12 +34,11 @@
  *********************************************************************/
 
 #define BOOST_PARAMETER_MAX_ARITY 7
-#include "jsk_pcl_ros/edge_based_pose_estimation.h"
-#include "jsk_recognition_utils/pcl_conversion_util.h"
-#include <pcl_conversions/pcl_conversions.h>
-#include <sensor_msgs/PointCloud2.h>
-
+#include <boost/thread/thread.hpp>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/visualization/pcl_visualizer.h>
+
+#include "jsk_pcl_ros/edge_based_pose_estimation.h"
 
 
 namespace jsk_pcl_ros
@@ -50,6 +49,7 @@ namespace jsk_pcl_ros
 
     pnh_->param("max_queue_size", max_queue_size_, 10);
     pnh_->param("approximate_sync", approximate_sync_, false);
+    pnh_->param("debug_viewer", debug_viewer_, false);
     pub_ = advertise<geometry_msgs::PoseStamped>(*pnh_, "output_pose", 1);
     onInitPostProcess();
   }
@@ -59,15 +59,16 @@ namespace jsk_pcl_ros
     sub_cloud_.subscribe(*pnh_, "input", 1);
     sub_indices_.subscribe(*pnh_, "indices", 1);
     sub_edges_.subscribe(*pnh_, "edges", 1);
+    sub_pose_.subscribe(*pnh_, "pose", 1);
     if (approximate_sync_) {
       async_ = boost::make_shared<message_filters::Synchronizer<ApproximateSyncPolicy> >(max_queue_size_);
-      async_->connectInput(sub_indices_, sub_cloud_, sub_edges_);
-      async_->registerCallback(boost::bind(&EdgeBasedPoseEstimation::estimate, this, _1, _2, _3));
+      async_->connectInput(sub_indices_, sub_cloud_, sub_edges_, sub_pose_);
+      async_->registerCallback(boost::bind(&EdgeBasedPoseEstimation::estimate, this, _1, _2, _3, _4));
     }
     else {
       sync_ = boost::make_shared<message_filters::Synchronizer<SyncPolicy> >(max_queue_size_);
-      sync_->connectInput(sub_indices_, sub_cloud_, sub_edges_);
-      sync_->registerCallback(boost::bind(&EdgeBasedPoseEstimation::estimate, this, _1, _2, _3));
+      sync_->connectInput(sub_indices_, sub_cloud_, sub_edges_, sub_pose_);
+      sync_->registerCallback(boost::bind(&EdgeBasedPoseEstimation::estimate, this, _1, _2, _3, _4));
     }
   }
 
@@ -76,19 +77,32 @@ namespace jsk_pcl_ros
     sub_cloud_.unsubscribe();
     sub_indices_.unsubscribe();
     sub_edges_.unsubscribe();
+    sub_pose_.unsubscribe();
   }
 
   void EdgeBasedPoseEstimation::estimate(
     const jsk_recognition_msgs::ClusterPointIndices::ConstPtr& indices_msg,
     const sensor_msgs::PointCloud2::ConstPtr& cloud_msg,
-    const jsk_recognition_msgs::EdgeArray::ConstPtr& edges_msg)
+    const jsk_recognition_msgs::EdgeArray::ConstPtr& edges_msg,
+    const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
   {
     NODELET_INFO("estimate function is called.\n");
 
+    // check size
     int indices_size = indices_msg->cluster_indices.size();
     int edges_size = edges_msg->edges.size();
     if(indices_size != edges_size) {
       NODELET_ERROR("size of indices(%d) and edges(%d) are not same.\n", indices_size, edges_size);
+      return;
+    }
+
+    // check frame_id
+    std::string cloud_frame_id = cloud_msg->header.frame_id;
+    std::string edges_frame_id = edges_msg->header.frame_id;
+    std::string pose_frame_id = pose_msg->header.frame_id;
+    if (! ((cloud_frame_id == edges_frame_id) && (cloud_frame_id == pose_frame_id))) {
+      NODELET_ERROR("frame_id of indices(%s), edges(%s), and pose(%s) are not same.\n",
+                    cloud_frame_id.c_str(), edges_frame_id.c_str(), pose_frame_id.c_str());
       return;
     }
 
@@ -148,10 +162,43 @@ namespace jsk_pcl_ros
     trans_est_.estimateRigidTransformation(*detected_edge_cloud, *model_edge_cloud, trans.matrix());
     trans = trans.inverse(); // inverse transformation because src and dest is flipped in estimation
 
-    std::cout << "estimated transformation" << std::endl << trans.matrix() << std::endl;
-
+    // consider initial transformation
+    Eigen::Affine3f initial_trans;
+    Eigen::Affine3f out_trans;
     geometry_msgs::PoseStamped out_pose_msg;
+    tf::poseMsgToEigen(pose_msg->pose, initial_trans);
+    out_trans = initial_trans * trans;
+    tf::poseEigenToMsg(out_trans, out_pose_msg.pose);
+
+    // publish result pose
+    out_pose_msg.header = cloud_msg->header;
     pub_.publish(out_pose_msg);
+
+    // display debug viewer
+    if (debug_viewer_) {
+      pcl::PointCloud<pcl::PointNormal>::Ptr model_edge_cloud_transformed(new pcl::PointCloud<pcl::PointNormal>());
+
+      // transform pointcloud with estimated transformation
+      pcl::transformPointCloud(*model_edge_cloud, *model_edge_cloud_transformed, trans);
+
+      // visualize pointcloud
+      boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer ("3D Viewer"));
+      viewer->setBackgroundColor(0, 0, 0);
+      // model_edge_cloud
+      viewer->addPointCloudNormals<pcl::PointNormal>(model_edge_cloud, 6, 1.0, "model_edge_cloud");
+      // model_edge_cloud_transformed
+      viewer->addPointCloudNormals<pcl::PointNormal>(model_edge_cloud_transformed, 6, 1.0, "model_edge_cloud_transformed");
+      // detected_edge_cloud
+      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> rgb_detected_edge_cloud(detected_edge_cloud, 0, 255, 0);
+      viewer->addPointCloud<pcl::PointXYZ>(detected_edge_cloud, rgb_detected_edge_cloud, "detected_edge_cloud");
+      viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "detected_edge_cloud");
+      while (!viewer->wasStopped ()) {
+        viewer->spinOnce (100);
+        boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+      }
+    }
+
+    std::cout << "estimated transformation" << std::endl << trans.matrix() << std::endl;
   }
 
 }

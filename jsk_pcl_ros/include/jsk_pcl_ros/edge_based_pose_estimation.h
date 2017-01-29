@@ -38,6 +38,7 @@
 
 #include <jsk_topic_tools/connection_based_nodelet.h>
 #include <jsk_recognition_utils/pcl_conversion_util.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <jsk_recognition_msgs/EdgeArray.h>
 #include <jsk_recognition_msgs/ClusterPointIndices.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -57,11 +58,13 @@ namespace jsk_pcl_ros
     typedef message_filters::sync_policies::ExactTime<
       jsk_recognition_msgs::ClusterPointIndices,
       sensor_msgs::PointCloud2,
-      jsk_recognition_msgs::EdgeArray> SyncPolicy;
+      jsk_recognition_msgs::EdgeArray,
+      geometry_msgs::PoseStamped > SyncPolicy;
     typedef message_filters::sync_policies::ApproximateTime<
       jsk_recognition_msgs::ClusterPointIndices,
       sensor_msgs::PointCloud2,
-      jsk_recognition_msgs::EdgeArray > ApproximateSyncPolicy;
+      jsk_recognition_msgs::EdgeArray,
+      geometry_msgs::PoseStamped > ApproximateSyncPolicy;
 
   protected:
     virtual void onInit();
@@ -70,16 +73,19 @@ namespace jsk_pcl_ros
     virtual void estimate(
       const jsk_recognition_msgs::ClusterPointIndices::ConstPtr& indices_msg,
       const sensor_msgs::PointCloud2::ConstPtr& msg,
-      const jsk_recognition_msgs::EdgeArray::ConstPtr& edges_msg);
+      const jsk_recognition_msgs::EdgeArray::ConstPtr& edges_msg,
+      const geometry_msgs::PoseStamped::ConstPtr& pose_msg);
 
     int max_queue_size_;
     bool approximate_sync_;
+    bool debug_viewer_;
     boost::shared_ptr<message_filters::Synchronizer<SyncPolicy> >sync_;
     boost::shared_ptr<message_filters::Synchronizer<ApproximateSyncPolicy> >async_;
     ros::Publisher pub_;
     message_filters::Subscriber<sensor_msgs::PointCloud2> sub_cloud_;
     message_filters::Subscriber<jsk_recognition_msgs::ClusterPointIndices> sub_indices_;
     message_filters::Subscriber<jsk_recognition_msgs::EdgeArray> sub_edges_;
+    message_filters::Subscriber<geometry_msgs::PoseStamped> sub_pose_;
     pcl::registration::TransformationEstimationPointToLine<pcl::PointXYZ, pcl::PointNormal> trans_est_;
   private:
   };
