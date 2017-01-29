@@ -40,12 +40,13 @@
 #include <jsk_recognition_utils/pcl_conversion_util.h>
 #include <jsk_recognition_msgs/EdgeArray.h>
 #include <jsk_recognition_msgs/ClusterPointIndices.h>
-
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
+
+#include "jsk_pcl_ros/pcl/transformation_estimation_point_to_line.h"
 
 
 namespace jsk_pcl_ros
@@ -54,6 +55,7 @@ namespace jsk_pcl_ros
   {
   public:
     typedef pcl::PointXYZ PointXYZ;
+    typedef pcl::PointNormal PointNormal;
     typedef message_filters::sync_policies::ExactTime<
       jsk_recognition_msgs::ClusterPointIndices,
       sensor_msgs::PointCloud2,
@@ -80,6 +82,7 @@ namespace jsk_pcl_ros
     message_filters::Subscriber<sensor_msgs::PointCloud2> sub_cloud_;
     message_filters::Subscriber<jsk_recognition_msgs::ClusterPointIndices> sub_indices_;
     message_filters::Subscriber<jsk_recognition_msgs::EdgeArray> sub_edges_;
+    pcl::registration::TransformationEstimationPointToLine<PointXYZ, PointNormal> trans_est_;
   private:
   };
 
