@@ -54,8 +54,6 @@ namespace jsk_pcl_ros
   class EdgeBasedPoseEstimation: public jsk_topic_tools::ConnectionBasedNodelet
   {
   public:
-    typedef pcl::PointXYZ PointXYZ;
-    typedef pcl::PointNormal PointNormal;
     typedef message_filters::sync_policies::ExactTime<
       jsk_recognition_msgs::ClusterPointIndices,
       sensor_msgs::PointCloud2,
@@ -82,7 +80,7 @@ namespace jsk_pcl_ros
     message_filters::Subscriber<sensor_msgs::PointCloud2> sub_cloud_;
     message_filters::Subscriber<jsk_recognition_msgs::ClusterPointIndices> sub_indices_;
     message_filters::Subscriber<jsk_recognition_msgs::EdgeArray> sub_edges_;
-    pcl::registration::TransformationEstimationPointToLine<PointXYZ, PointNormal> trans_est_;
+    pcl::registration::TransformationEstimationPointToLine<pcl::PointXYZ, pcl::PointNormal> trans_est_;
   private:
   };
 

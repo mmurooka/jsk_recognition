@@ -39,6 +39,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <sensor_msgs/PointCloud2.h>
 
+#include <pcl/filters/extract_indices.h>
+
 
 namespace jsk_pcl_ros
 {
@@ -81,11 +83,77 @@ namespace jsk_pcl_ros
     const sensor_msgs::PointCloud2::ConstPtr& cloud_msg,
     const jsk_recognition_msgs::EdgeArray::ConstPtr& edges_msg)
   {
+    NODELET_INFO("estimate function is called.\n");
+
+    int indices_size = indices_msg->cluster_indices.size();
+    int edges_size = edges_msg->edges.size();
+    if(indices_size != edges_size) {
+      NODELET_ERROR("size of indices(%d) and edges(%d) are not same.\n", indices_size, edges_size);
+      return;
+    }
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr detected_edge_cloud(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointCloud<pcl::PointNormal>::Ptr model_edge_cloud(new pcl::PointCloud<pcl::PointNormal>());
+
+    pcl::ExtractIndices<pcl::PointXYZ> extract;
+    std::vector<pcl::IndicesPtr> indices_vec;
+
+    // get indices vec
+    for (size_t i = 0; i < indices_msg->cluster_indices.size(); i++) {
+      pcl::IndicesPtr indices;
+      indices.reset (new std::vector<int> (indices_msg->cluster_indices[i].indices));
+      indices_vec.push_back(indices);
+    }
+
+    // get pointcloud on detected edges and pointcloud of model edges
+    pcl::fromROSMsg(*cloud_msg, *cloud);
+    extract.setInputCloud(cloud);
+    for (size_t i = 0; i < indices_vec.size(); i++) {
+      pcl::PointCloud<pcl::PointXYZ>::Ptr segmented_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+      extract.setIndices(indices_vec[i]);
+      extract.filter(*segmented_cloud);
+
+      // merge detected edge cloud
+      *detected_edge_cloud += *segmented_cloud;
+      detected_edge_cloud->width = (int)detected_edge_cloud->points.size();
+      detected_edge_cloud->height = 1;
+
+      // generate point for model edge cloud
+      Eigen::Vector3d start_point;
+      Eigen::Vector3d end_point;
+      Eigen::Vector3d edge_dir;
+      tf::pointMsgToEigen(edges_msg->edges[i].start_point, start_point);
+      tf::pointMsgToEigen(edges_msg->edges[i].end_point, end_point);
+      edge_dir = end_point - start_point;
+      pcl::PointNormal model_edge_point;
+      model_edge_point.x = start_point(0);
+      model_edge_point.y = start_point(1);
+      model_edge_point.z = start_point(2);
+      model_edge_point.normal_x = edge_dir(0);
+      model_edge_point.normal_y = edge_dir(1);
+      model_edge_point.normal_z = edge_dir(2);
+
+      // merge model edge cloud
+      for (size_t j = 0; j < indices_vec[i]->size(); j++) {
+        model_edge_cloud->points.push_back(model_edge_point);
+      }
+      model_edge_cloud->width = (int)model_edge_cloud->points.size();
+      model_edge_cloud->height = 1;
+    }
+
+    // estimate transformation
+    Eigen::Affine3f trans;
+    trans_est_.estimateRigidTransformation(*detected_edge_cloud, *model_edge_cloud, trans.matrix());
+    trans = trans.inverse(); // inverse transformation because src and dest is flipped in estimation
+
+    std::cout << "estimated transformation" << std::endl << trans.matrix() << std::endl;
+
     geometry_msgs::PoseStamped out_pose_msg;
     pub_.publish(out_pose_msg);
-
-    ROS_INFO("[edge_based_pose_estimation_nodelet] esitmate is called.\n");
   }
+
 }
 
 #include <pluginlib/class_list_macros.h>
