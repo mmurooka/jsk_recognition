@@ -449,6 +449,11 @@
     <description>
     </description>
   </class>
+  <class name="jsk_pcl/EdgeBasedPoseEstimation" type="jsk_pcl_ros::EdgeBasedPoseEstimation"
+         base_class_type="nodelet::Nodelet">
+    <description>
+    </description>
+  </class>
 
   <!-- <class name="jsk_pcl/OrganizePointCloud" type="jsk_pcl_ros::OrganizePointCloud" -->
   <!--        base_class_type="nodelet::Nodelet"> -->
