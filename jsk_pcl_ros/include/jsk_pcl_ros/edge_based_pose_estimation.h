@@ -87,6 +87,7 @@ namespace jsk_pcl_ros
     message_filters::Subscriber<jsk_recognition_msgs::EdgeArray> sub_edges_;
     message_filters::Subscriber<geometry_msgs::PoseStamped> sub_pose_;
     pcl::registration::TransformationEstimationPointToLine<pcl::PointXYZ, pcl::PointNormal> trans_est_;
+
   private:
   };
 

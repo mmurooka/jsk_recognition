@@ -159,15 +159,16 @@ namespace jsk_pcl_ros
 
     // estimate transformation
     Eigen::Affine3f trans;
+    Eigen::Affine3f trans_inv;
     trans_est_.estimateRigidTransformation(*detected_edge_cloud, *model_edge_cloud, trans.matrix());
-    trans = trans.inverse(); // inverse transformation because src and dest is flipped in estimation
+    trans_inv = trans.inverse(); // inverse transformation because src and dest is flipped in estimation
 
     // consider initial transformation
     Eigen::Affine3f initial_trans;
     Eigen::Affine3f out_trans;
     geometry_msgs::PoseStamped out_pose_msg;
     tf::poseMsgToEigen(pose_msg->pose, initial_trans);
-    out_trans = initial_trans * trans;
+    out_trans = trans_inv * initial_trans;
     tf::poseEigenToMsg(out_trans, out_pose_msg.pose);
 
     // publish result pose
@@ -176,10 +177,11 @@ namespace jsk_pcl_ros
 
     // display debug viewer
     if (debug_viewer_) {
-      pcl::PointCloud<pcl::PointNormal>::Ptr model_edge_cloud_transformed(new pcl::PointCloud<pcl::PointNormal>());
-
       // transform pointcloud with estimated transformation
-      pcl::transformPointCloud(*model_edge_cloud, *model_edge_cloud_transformed, trans);
+      pcl::PointCloud<pcl::PointNormal>::Ptr model_edge_cloud_transformed(new pcl::PointCloud<pcl::PointNormal>());
+      pcl::PointCloud<pcl::PointXYZ>::Ptr detected_edge_cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>());
+      pcl::transformPointCloud(*model_edge_cloud, *model_edge_cloud_transformed, trans_inv);
+      pcl::transformPointCloud(*detected_edge_cloud, *detected_edge_cloud_transformed, trans);
 
       // visualize pointcloud
       boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer ("3D Viewer"));
@@ -191,11 +193,17 @@ namespace jsk_pcl_ros
       // detected_edge_cloud
       pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> rgb_detected_edge_cloud(detected_edge_cloud, 0, 255, 0);
       viewer->addPointCloud<pcl::PointXYZ>(detected_edge_cloud, rgb_detected_edge_cloud, "detected_edge_cloud");
-      viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "detected_edge_cloud");
-      while (!viewer->wasStopped ()) {
-        viewer->spinOnce (100);
+      viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "detected_edge_cloud");
+      // detected_edge_cloud_transformed
+      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> rgb_detected_edge_cloud_transformed(detected_edge_cloud_transformed, 0, 0, 255);
+      viewer->addPointCloud<pcl::PointXYZ>(detected_edge_cloud_transformed, rgb_detected_edge_cloud_transformed, "detected_edge_cloud_transformed");
+      viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "detected_edge_cloud_transformed");
+
+      while (!viewer->wasStopped()) {
+        viewer->spinOnce(100);
         boost::this_thread::sleep (boost::posix_time::microseconds (100000));
       }
+      viewer->removeAllPointClouds();
     }
 
     std::cout << "estimated transformation" << std::endl << trans.matrix() << std::endl;
