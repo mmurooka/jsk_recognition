@@ -79,6 +79,8 @@ namespace jsk_pcl_ros
     int max_queue_size_;
     bool approximate_sync_;
     bool debug_viewer_;
+    bool publish_tf_;
+    std::string output_frame_id_;
     boost::shared_ptr<message_filters::Synchronizer<SyncPolicy> >sync_;
     boost::shared_ptr<message_filters::Synchronizer<ApproximateSyncPolicy> >async_;
     ros::Publisher pub_;

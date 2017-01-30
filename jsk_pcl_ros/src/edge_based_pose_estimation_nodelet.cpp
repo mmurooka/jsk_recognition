@@ -37,6 +37,7 @@
 #include <boost/thread/thread.hpp>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <tf/transform_broadcaster.h>
 
 #include "jsk_pcl_ros/edge_based_pose_estimation.h"
 
@@ -50,6 +51,8 @@ namespace jsk_pcl_ros
     pnh_->param("max_queue_size", max_queue_size_, 10);
     pnh_->param("approximate_sync", approximate_sync_, false);
     pnh_->param("debug_viewer", debug_viewer_, false);
+    pnh_->param("publish_tf", publish_tf_, false);
+    pnh_->param("output_frame_id", output_frame_id_, std::string("track_result"));
     pub_ = advertise<geometry_msgs::PoseStamped>(*pnh_, "output_pose", 1);
     onInitPostProcess();
   }
@@ -163,6 +166,8 @@ namespace jsk_pcl_ros
     trans_est_.estimateRigidTransformation(*detected_edge_cloud, *model_edge_cloud, trans.matrix());
     trans_inv = trans.inverse(); // inverse transformation because src and dest is flipped in estimation
 
+    // std::cout << "estimated transformation" << std::endl << trans.matrix() << std::endl;
+
     // consider initial transformation
     Eigen::Affine3f initial_trans;
     Eigen::Affine3f out_trans;
@@ -171,9 +176,18 @@ namespace jsk_pcl_ros
     out_trans = trans_inv * initial_trans;
     tf::poseEigenToMsg(out_trans, out_pose_msg.pose);
 
-    // publish result pose
+    // publish out pose
     out_pose_msg.header = cloud_msg->header;
     pub_.publish(out_pose_msg);
+
+    // publish out result
+    if (!publish_tf_) {
+      tf::Transform tf_out_trans;
+      tf::transformEigenToTF(out_trans, tf_out_trans);
+      static tf::TransformBroadcaster tf_broadcaster;
+      tf_broadcaster.sendTransform(tf::StampedTransform(tf_out_trans, cloud_msg->header.stamp,
+                                                        cloud_msg->header.frame_id, output_frame_id_));
+    }
 
     // display debug viewer
     if (debug_viewer_) {
@@ -205,8 +219,6 @@ namespace jsk_pcl_ros
       }
       viewer->removeAllPointClouds();
     }
-
-    std::cout << "estimated transformation" << std::endl << trans.matrix() << std::endl;
   }
 
 }
