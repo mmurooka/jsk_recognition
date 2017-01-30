@@ -89,7 +89,7 @@ namespace jsk_pcl_ros
     const jsk_recognition_msgs::EdgeArray::ConstPtr& edges_msg,
     const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
   {
-    NODELET_INFO("estimate function is called.\n");
+    NODELET_DEBUG("estimate function is called.\n");
 
     // check size
     int indices_size = indices_msg->cluster_indices.size();
@@ -181,7 +181,7 @@ namespace jsk_pcl_ros
     pub_.publish(out_pose_msg);
 
     // publish out result
-    if (!publish_tf_) {
+    if (publish_tf_) {
       tf::Transform tf_out_trans;
       tf::transformEigenToTF(out_trans, tf_out_trans);
       static tf::TransformBroadcaster tf_broadcaster;
