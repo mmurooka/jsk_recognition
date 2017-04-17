@@ -1,4 +1,7 @@
 # PolygonMagnifier
+
+![](./images/polygon_magnifier.png)
+
 Magnify polygons by specified length.
 
 ## Subscribing Topic
@@ -14,4 +17,4 @@ Magnify polygons by specified length.
 ## Parameters
 * `~magnify_distance` (Double, default: `0.2`)
 
-  Length to scale polygon
+  Length to scale polygons. Default value `0.2` means the distance of each corresponding edges will be `0.2` m.
