@@ -18,3 +18,9 @@ Magnify polygons by specified length.
 * `~magnify_distance` (Double, default: `0.2`)
 
   Length to scale polygons. Default value `0.2` means the distance of each corresponding edges will be `0.2` m.
+
+## Sample
+
+``` bash
+roslaunch jsk_pcl_ros_utils sample_polygon_magnifier.launch
+```
