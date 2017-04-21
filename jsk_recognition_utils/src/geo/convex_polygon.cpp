@@ -251,7 +251,7 @@ namespace jsk_recognition_utils
       Eigen::Vector3f diff_vec;
       if (distance > 0.0) diff_vec = vertices_[i] - c;
       else                diff_vec = c - vertices_[i];
-      new_vertices[i] = diff_vec.normalized() * abs(distance) + vertices_[i];
+      new_vertices[i] = diff_vec.normalized() * fabs(distance) + vertices_[i];
       // ROS_INFO("old v: [%f, %f, %f]", vertices_[i][0], vertices_[i][1], vertices_[i][2]);
       // ROS_INFO("new v: [%f, %f, %f]", new_vertices[i][0], new_vertices[i][1], new_vertices[i][2]);
       // ROS_INFO("");
