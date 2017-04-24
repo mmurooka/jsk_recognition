@@ -58,6 +58,9 @@ add_message_files(
   ContactSensor.msg
   ContactSensorArray.msg
   PlotDataArray.msg
+  Edge.msg
+  EdgeStamped.msg
+  EdgeArray.msg
   )
 
 # TODO(wkentaro): Most of srv files are duplicated in jsk_pcl_ros,
