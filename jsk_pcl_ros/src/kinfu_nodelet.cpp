@@ -38,6 +38,7 @@
 #include "jsk_recognition_utils/pcl_conversion_util.h"
 #include <pcl/common/transforms.h>
 #include <cv_bridge/cv_bridge.h>
+#include <cmath>
 
 namespace jsk_pcl_ros
 {
@@ -158,7 +159,7 @@ namespace jsk_pcl_ros
       // TODO: we should use tf message filter
       try {
         // odom -> camera
-        tf::StampedTransform trans = 
+        tf::StampedTransform trans =
           lookupTransformWithDuration(tf_listener_,
                                       depth_image->header.frame_id,
                                       child_frame_id_,
@@ -166,20 +167,40 @@ namespace jsk_pcl_ros
                                       ros::Duration(0.1));
         Eigen::Affine3f odom_camera;
         tf::transformTFToEigen(trans, odom_camera);
-        if (std::string("")!=parent_frame_id_) // if parent_frame_id is set, child_frame_id must be the top of the tf tree.
-        {
-          Eigen::Affine3f map = initial_camera_pose_ * K * odom_camera.inverse();
-          tf::Transform map_odom_transform;
-          tf::transformEigenToTF(map, map_odom_transform);
-          tf_broadcaster_.sendTransform(tf::StampedTransform(
-                                                             map_odom_transform,
-                                                             depth_image->header.stamp,
-                                                             parent_frame_id_,
-                                                             child_frame_id_));
-        }
+        if (std::string("") != parent_frame_id_) // if parent_frame_id is set, child_frame_id must be the top of the tf tree.
+          {
+            Eigen::Affine3f map = initial_camera_pose_ * K * odom_camera.inverse();
+            tf::Transform map_odom_transform;
+            tf::transformEigenToTF(map, map_odom_transform);
+            tf_broadcaster_.sendTransform(tf::StampedTransform(
+                                                               map_odom_transform,
+                                                               depth_image->header.stamp,
+                                                               parent_frame_id_,
+                                                               child_frame_id_));
+          }
         tf::Transform kinfu_origin;
         Eigen::Affine3f inverse_camera_pose = camera_pose.inverse();
+
+        //////////////////
+        //
+        {
+          Eigen::Quaternionf q;
+          q = inverse_camera_pose.rotation();
+          NODELET_DEBUG_STREAM("inverse_camera_pose quat (" << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << ")  norm = " << q.norm());
+        }
+        //
+        //////////////////
+
         tf::transformEigenToTF(inverse_camera_pose, kinfu_origin);
+        kinfu_origin.setRotation(kinfu_origin.getRotation().normalize());
+
+        //////////////////
+        //
+        NODELET_DEBUG_STREAM("kinfu_origin quoternion #f(" << kinfu_origin.getRotation().x() << " " << kinfu_origin.getRotation().y() << " " << kinfu_origin.getRotation().z() << " " << kinfu_origin.getRotation().w() << ")" <<
+                             " norm = " << (std::sqrt(kinfu_origin.getRotation().x() * kinfu_origin.getRotation().x() + kinfu_origin.getRotation().y() * kinfu_origin.getRotation().y() + kinfu_origin.getRotation().z() * kinfu_origin.getRotation().z() + kinfu_origin.getRotation().w() * kinfu_origin.getRotation().w())));
+        //
+        //////////////////
+
         tf_broadcaster_.sendTransform(tf::StampedTransform(
                                                            kinfu_origin,
                                                            depth_image->header.stamp,
@@ -192,7 +213,7 @@ namespace jsk_pcl_ros
         pub_pose_.publish(ros_camera_diff);
 
         // scene cloud.
-        pcl::gpu::DeviceArray<pcl::PointXYZ> extracted = kinfu_->volume().fetchCloud(cloud_buffer_device_);             
+        pcl::gpu::DeviceArray<pcl::PointXYZ> extracted = kinfu_->volume().fetchCloud(cloud_buffer_device_);
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         extracted.download (cloud->points);
