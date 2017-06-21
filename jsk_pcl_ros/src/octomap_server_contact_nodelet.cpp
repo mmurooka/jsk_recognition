@@ -154,12 +154,27 @@ namespace jsk_pcl_ros
 
     point3d pmin( m_occupancyMinX, m_occupancyMinY, m_occupancyMinZ);
     point3d pmax( m_occupancyMaxX, m_occupancyMaxY, m_occupancyMaxZ);
+    // align min and max coord
+    {
+      octomap::OcTreeKey pKey;
+      if (m_octreeContact->coordToKeyChecked(pmin, pKey)) {
+        pmin = m_octreeContact->keyToCoord(pKey);
+      } else {
+        NODELET_WARN_STREAM("failed coordToKeyChecked: " << pmin);
+      }
+      if (m_octreeContact->coordToKeyChecked(pmax, pKey)) {
+        pmax = m_octreeContact->keyToCoord(pKey);
+      } else {
+        NODELET_WARN_STREAM("failed coordToKeyChecked: " << pmax);
+      }
+    }
+
     float diff[3];
     unsigned int steps[3];
     double resolution = m_octreeContact->getResolution();
     for (int i = 0; i < 3; ++i) {
       diff[i] = pmax(i) - pmin(i);
-      steps[i] = floor(diff[i] / resolution);
+      steps[i] = ceil(diff[i] / resolution);
       //      std::cout << "bbx " << i << " size: " << diff[i] << " " << steps[i] << " steps\n";
     }
 
@@ -232,6 +247,8 @@ namespace jsk_pcl_ros
             if (m_octreeContact->coordToKeyChecked(p, pKey)) {
               m_octreeContact->updateNode(pKey, m_octreeContact->getProbMissContactSensorLog());
               // std::cout << "find inside grid and find key. p = " << vertex << std::endl;
+            } else {
+              NODELET_WARN_STREAM("failed coordToKeyChecked: " << p);
             }
           }
           else if (surfaceFlag) { // surface
@@ -445,6 +462,21 @@ namespace jsk_pcl_ros
     double offset = m_offsetVisualizeUnknown;
     point3d pMin(m_occupancyMinX + offset, m_occupancyMinY + offset, m_occupancyMinZ + offset);
     point3d pMax(m_occupancyMaxX - offset, m_occupancyMaxY - offset, m_occupancyMaxZ - offset);
+
+    // align min and max coord
+    {
+      octomap::OcTreeKey pKey;
+      if (m_octreeContact->coordToKeyChecked(pMin, pKey)) {
+        pMin = m_octreeContact->keyToCoord(pKey);
+      } else {
+        NODELET_WARN_STREAM("failed coordToKeyChecked: " << pMin);
+      }
+      if (m_octreeContact->coordToKeyChecked(pMax, pKey)) {
+        pMax = m_octreeContact->keyToCoord(pKey);
+      } else {
+        NODELET_WARN_STREAM("failed coordToKeyChecked: " << pMax);
+      }
+    }
 
     m_octreeContact->getUnknownLeafCenters(unknownLeaves, pMin, pMax);
     pcl::PointCloud<pcl::PointXYZ> unknownCloud;
