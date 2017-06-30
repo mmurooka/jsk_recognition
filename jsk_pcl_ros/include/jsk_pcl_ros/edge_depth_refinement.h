@@ -106,6 +106,7 @@ namespace jsk_pcl_ros
       ros::Publisher& pub,
       ros::Publisher& pub_coefficients,
       ros::Publisher& pub_edges,
+      const pcl::PointCloud<PointT>::Ptr& cloud,
       const std::vector<pcl::PointIndices::Ptr> inliers,
       const std::vector<pcl::ModelCoefficients::Ptr> coefficients,
       const std_msgs::Header& header);
@@ -119,6 +120,12 @@ namespace jsk_pcl_ros
       const std::set<int>& duplicated_set,
       const std::vector<pcl::PointIndices::Ptr> all_inliers,
       pcl::PointIndices::Ptr& output_indices);
+    
+  void getSegmentMsgFromCloud(
+    const pcl::PointCloud<PointT>::Ptr& cloud,
+    const std::vector<int>& indices,
+    const pcl::ModelCoefficients::Ptr& coefficient,
+    jsk_recognition_msgs::Segment &segment_msg);
     
     virtual void configCallback (Config &config, uint32_t level);
 

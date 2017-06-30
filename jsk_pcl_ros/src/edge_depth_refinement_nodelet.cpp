@@ -191,6 +191,46 @@ namespace jsk_pcl_ros
     }
     output_indices->indices = integrated_indices;
   }
+
+  void EdgeDepthRefinement::getSegmentMsgFromCloud(
+    const pcl::PointCloud<PointT>::Ptr& cloud,
+    const std::vector<int>& indices,
+    const pcl::ModelCoefficients::Ptr& coefficient,
+    jsk_recognition_msgs::Segment &segment_msg)
+  {
+    // get min/max point
+    PointT min_point;
+    PointT max_point;
+    {
+      boost::tuple<int, int> min_max
+        = findMinMaxIndex(cloud->width, cloud->height, indices);
+      min_point = cloud->points[min_max.get<0>()];
+      max_point = cloud->points[min_max.get<1>()];
+    }
+
+    // find min/max foot point
+    Eigen::Vector3f min_foot;
+    Eigen::Vector3f max_foot;
+    {
+      Eigen::Vector3f min_point_f = min_point.getVector3fMap();
+      Eigen::Vector3f max_point_f = max_point.getVector3fMap();
+      Eigen::Vector3f p(coefficient->values[0],
+                        coefficient->values[1],
+                        coefficient->values[2]);
+      Eigen::Vector3f d(coefficient->values[3],
+                        coefficient->values[4],
+                        coefficient->values[5]);
+      jsk_recognition_utils::Line line = jsk_recognition_utils::Line(d, p);
+      line.foot(min_point_f, min_foot);
+      line.foot(max_point_f, max_foot);
+    }
+
+    // set segment message
+    {
+      tf::pointEigenToMsg(min_foot.cast <double> (), segment_msg.start_point);
+      tf::pointEigenToMsg(max_foot.cast <double> (), segment_msg.end_point);
+    }
+  }
   
   void EdgeDepthRefinement::removeDuplicatedEdges(
     const pcl::PointCloud<PointT>::Ptr& cloud,
@@ -356,6 +396,7 @@ namespace jsk_pcl_ros
     ros::Publisher& pub,
     ros::Publisher& pub_coefficients,
     ros::Publisher& pub_edges,
+    const pcl::PointCloud<PointT>::Ptr& cloud,
     const std::vector<pcl::PointIndices::Ptr> inliers,
     const std::vector<pcl::ModelCoefficients::Ptr> coefficients,
     const std_msgs::Header& header)
@@ -378,12 +419,10 @@ namespace jsk_pcl_ros
       output_coefficients_msg.values = coefficients[i]->values;
       output_ros_coefficients_msg.coefficients.push_back(output_coefficients_msg);
 
-      output_edge_msg.start_point.x = coefficients[i]->values[0] - coefficients[i]->values[3];
-      output_edge_msg.start_point.y = coefficients[i]->values[1] - coefficients[i]->values[4];
-      output_edge_msg.start_point.z = coefficients[i]->values[2] - coefficients[i]->values[5];
-      output_edge_msg.end_point.x = coefficients[i]->values[0] + coefficients[i]->values[3];
-      output_edge_msg.end_point.y = coefficients[i]->values[1] + coefficients[i]->values[4];
-      output_edge_msg.end_point.z = coefficients[i]->values[2] + coefficients[i]->values[5];
+      getSegmentMsgFromCloud(cloud,
+                             inliers[i]->indices,
+                             coefficients[i],
+                             output_edge_msg);
       output_ros_edges_msg.segments.push_back(output_edge_msg);
     }
     pub.publish(output_ros_msg);
@@ -420,11 +459,13 @@ namespace jsk_pcl_ros
     publishIndices(pub_outlier_removed_indices_,
                    pub_outlier_removed_coefficients_,
                    pub_outlier_removed_edges_,
+                   cloud,
                    inliers, coefficients,
                    input->header);
     publishIndices(pub_indices_,
                    pub_coefficients_,
                    pub_edges_,
+                   cloud,
                    non_duplicated_inliers,
                    non_duplicated_coefficients,
                    input->header);
